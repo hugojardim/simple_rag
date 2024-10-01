@@ -1,0 +1,40 @@
+version: "3.8"
+services:
+  application:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: application
+    container_name: application
+    volumes:
+      - ./:/app/
+    networks:
+      - net
+    depends_on:
+      chroma:
+        condition: service_healthy
+
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    volumes:
+      - index_data:/chroma/.chroma/index
+    ports:
+      - 8000:8000
+    networks:
+      - net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 10s
+      retries: 2
+      start_period: 5s
+
+volumes:
+  index_data:
+    driver: local
+  backups:
+    driver: local
+
+networks:
+  net:
+    driver: bridge
